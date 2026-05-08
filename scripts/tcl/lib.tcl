@@ -54,6 +54,48 @@ proc ts_prepare_bd {wrapper_top} {
         foreach ip $locked { lappend names [get_property NAME $ip] }
         puts "\[ts\] Upgrading [llength $locked] locked IP(s): [join $names {, }]"
         upgrade_ip $locked
+
+        # Re-query: IPs whose VLNV cannot be resolved in any visible
+        # ip_repo_paths entry stay locked even after upgrade_ip — Vivado
+        # has nothing to upgrade *to*.  generate_target / make_wrapper
+        # would then fail with a useless "BD is locked" message; bail with
+        # an actionable error pointing at --ip-repo instead.
+        set still_locked [get_ips -quiet -filter {IS_LOCKED == 1}]
+        if {[llength $still_locked] > 0} {
+            puts "\[ts\] ERROR: IP(s) still locked after upgrade_ip:"
+            foreach ip $still_locked {
+                set nm   [get_property NAME  $ip]
+                set vlnv [get_property IPDEF $ip]
+                # LOCK_STATUS is the canonical "why locked" property in
+                # 2024.x+, but fall back gracefully on older releases.
+                set reason ""
+                if {[catch {get_property LOCK_STATUS $ip} val] == 0} {
+                    set reason $val
+                } elseif {[catch {get_property LOCK_REASON $ip} val] == 0} {
+                    set reason $val
+                } else {
+                    set reason "(no LOCK_STATUS / LOCK_REASON property)"
+                }
+                puts "\[ts\]   - $nm    vlnv=$vlnv    reason=$reason"
+            }
+            set repos [get_property ip_repo_paths [current_project]]
+            if {[llength $repos] == 0} {
+                puts "\[ts\] Project ip_repo_paths is EMPTY."
+            } else {
+                puts "\[ts\] Current ip_repo_paths:"
+                foreach r $repos { puts "\[ts\]   - $r" }
+            }
+            puts "\[ts\]"
+            puts "\[ts\] This usually means the kernel's HLS IP catalogue is missing from the"
+            puts "\[ts\] paths above (or the version stored in the .xci is unreachable).  Re-run"
+            puts "\[ts\] with --ip-repo / IP_REPO_<kernel>=<dir> pointing at the directory that"
+            puts "\[ts\] contains the kernel's exported IP, e.g. for the pooling kernel:"
+            puts "\[ts\]"
+            puts "\[ts\]   make tb-pooling DATA_DIR_pooling=<...> \\"
+            puts "\[ts\]                   IP_REPO_pooling=/path/to/axi_demo/build/kernels/pooling"
+            puts "\[ts\]"
+            error "ts_prepare_bd: locked IPs prevent BD wrapper generation (see above)"
+        }
         puts "\[ts\] IP upgrade complete"
     } else {
         puts "\[ts\] No locked IPs"

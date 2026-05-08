@@ -22,8 +22,9 @@
 # ---------------------------------------------------------------------------
 
 KERNELS_TABLE=(
-    # name : project_dir         : xpr             : wrapper_top         : tb_top
-    "conv  : kernels/conv_test   : conv_test.xpr   : design_conv_wrapper : conv_tb"
+    # name    : project_dir            : xpr                : wrapper_top            : tb_top
+    "conv     : kernels/conv_test      : conv_test.xpr      : design_conv_wrapper    : conv_tb"
+    "pooling  : kernels/pooling_test   : pooling_test.xpr   : design_pooling_wrapper : pooling_tb"
 )
 
 # Whitespace-strip helper used by lib.sh::kernel_field.
