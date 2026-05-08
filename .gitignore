@@ -1,0 +1,56 @@
+# ---------------------------------------------------------------------------
+# Vivado per-project scratch directories — fully reproducible from the .xpr
+# and the sources_1/ fileset.  Wildcarded so they apply to every kernel
+# project under kernels/<name>_test/ without per-kernel maintenance.
+# ---------------------------------------------------------------------------
+*.cache/
+*.gen/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+
+# Synthesis-checkpoint scratch under sources/ (large binary; regenerated).
+# The middle slash anchors gitignore patterns, so `**/` is required to make
+# this match the per-kernel kernels/<name>_test/<name>_test.srcs/utils_1/.
+**/*.srcs/utils_1/
+
+# ---------------------------------------------------------------------------
+# Vivado / xsim session and log files
+# ---------------------------------------------------------------------------
+*.jou
+*.log
+*.str
+*.pb
+*.wdb
+*.backup.jou
+*.backup.log
+.Xil/
+xsim.dir/
+webtalk*.xml
+webtalk*.html
+
+# ---------------------------------------------------------------------------
+# Vivado waveform view configs (saved automatically when xsim exits;
+# rarely worth tracking — force-add explicitly with `git add -f` if needed).
+# ---------------------------------------------------------------------------
+*.wcfg
+*.wcfg.bak
+
+# ---------------------------------------------------------------------------
+# Test-stand outputs
+#
+# Default scoreboard report path is now <project_dir>/<kernel>_test_report.json
+# (see scripts/run_tb.sh).  Reports are run artefacts, not source.
+# ---------------------------------------------------------------------------
+*_test_report.json
+
+# ---------------------------------------------------------------------------
+# Editor / OS / misc
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
