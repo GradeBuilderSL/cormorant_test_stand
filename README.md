@@ -1,7 +1,8 @@
 # cormorant_test_stand
 
-Vivado test harnesses for the four HLS kernels of the cormorant inference
-stack — `ConvKernel`, `PoolingKernel`, `MatmulKernel`, and `VectorOPKernel`.
+Vivado test harnesses for the four HLS kernels of the
+[**Cormorant** FPGA neural-network inference accelerator](https://github.com/GradeBuilderSL/cormorant) —
+`ConvKernel`, `PoolingKernel`, `MatmulKernel`, and `VectorOPKernel`.
 Each kernel sits in its own Vivado project under `kernels/<name>_test/` with
 a Zynq-UltraScale+ PS VIP driving the AXI-Lite control port and DDR slave; a
 SystemVerilog OOP testbench programs the registers, asserts `ap_start`, and
@@ -24,6 +25,31 @@ without editing the project file. Whether or not the override is supplied,
 both `build_hw.sh` and `run_tb.sh` upgrade any locked IPs and regenerate the
 BD wrapper before launching synth or simulation, so the test always reflects
 the current kernel revision.
+
+## Related project
+
+The kernel sources, ONNX → C inference scheduler, and reference test-fixture
+generators all live in the parent
+[**cormorant**](https://github.com/GradeBuilderSL/cormorant) repository.
+This test stand consumes two of cormorant's outputs:
+
+- **HLS IP catalogues** — produced by cormorant's `make synthesize_<k>_kv260`
+  targets at `cormorant/build/kernels/<k>/kv260/<k>_kv260/`. Pass the
+  matching directory with `IP_REPO_<k>=` (see Quick start below).
+- **Behavioural test fixtures** (`manifest.txt` + per-test `.hex` files) —
+  produced by cormorant's `make gen_<k>_test_data` targets and emitted under
+  `cormorant/hw/test_data/<dir>/`:
+
+  | `<k>`       | Fixture target          | Default fixture directory                      |
+  |-------------|-------------------------|------------------------------------------------|
+  | `conv`      | `gen_conv_test_data`    | `cormorant/hw/test_data/conv_test_data/`       |
+  | `pooling`   | `gen_pool_test_data`    | `cormorant/hw/test_data/pool_test_data/`       |
+  | `matmul_op` | `gen_matmul_test_data`  | `cormorant/hw/test_data/matmul_test_data/`     |
+  | `vector_op` | `gen_vectorop_test_data`| `cormorant/hw/test_data/vecop_test_data/`      |
+
+  Pass the directory with `DATA_DIR_<k>=`. Different layouts are fine — the
+  testbench only needs `manifest.txt` plus the matching `test_NN_*.hex`
+  files; nothing in this repo assumes the cormorant tree.
 
 ## Registered kernels
 
@@ -240,3 +266,19 @@ cover it (see "When the kernel grows new AXI-Lite registers").
 | `REPORT` | Single-kernel shorthand for `REPORT_<k>` |
 | `IP_REPO_<k>` | Override the HLS IP repository path stored in kernel `<k>`'s `.xpr` |
 | `IP_REPO` | Single-kernel shorthand for `IP_REPO_<k>` |
+
+---
+
+## Funding
+
+[![dAIEDGE Project](https://img.shields.io/badge/dAIEDGE-Project-6A5ACD?style=for-the-badge)](https://daiedge.eu/)
+[![EU Horizon Europe](https://img.shields.io/badge/Funded%20by-EU%20Horizon%20Europe-003399?style=for-the-badge&logo=europeanunion&logoColor=white)](https://research-and-innovation.ec.europa.eu/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-europe_en)
+
+This work was supported by the **[dAIEDGE Open Call Programme](https://daiedge.eu/)**, funded by the **[European Union's Horizon Europe research and innovation programme](https://research-and-innovation.ec.europa.eu/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-europe_en)** under project number **#101120726**.
+
+---
+
+## License
+
+Copyright 2026 GradeBuilder SL. Licensed under the
+[Apache License, Version 2.0](LICENSE).
