@@ -15,6 +15,22 @@
 # this match the per-kernel kernels/<name>_test/<name>_test.srcs/utils_1/.
 **/*.srcs/utils_1/
 
+# Vivado bundled IP HDL.  Vivado dumps the .v / .sv / .vh / .vhd of every
+# IP the block design references into <proj>.srcs/sources_1/bd/<bd>/ipshared/
+# the first time the project is opened against an IP catalogue.  These files
+# are regenerated on every checkout-and-open and can balloon into hundreds of
+# files (e.g. a full second copy of MatmulKernel HDL when MatmulKernel sits
+# upstream of the kernel's CTRL port).  Derived, never source.
+**/*.srcs/sources_1/bd/*/ipshared/
+
+# Vivado-generated project-regeneration script.  Vivado writes
+# kernels/<k>_test/<k>_test.tcl the first time the project is opened (or via
+# write_project_tcl) so the project can be rebuilt without the .xpr.  We
+# treat the .xpr as the source of truth here, so the .tcl is scratch.  If a
+# kernel ever needs a hand-authored .tcl in its project root, force-add it
+# with `git add -f`.
+kernels/*/*.tcl
+
 # ---------------------------------------------------------------------------
 # Vivado / xsim session and log files
 # ---------------------------------------------------------------------------
