@@ -814,14 +814,11 @@ module matmul_tb;
     //
     // Hierarchy:
     //   dut.MatmulKernel_0.inst.*        - HLS kernel internals (MatmulKernel module)
-    //   dut.MatmulKernel_0_m_axi_gmem*_* - AXI data bus wires inside design_vectorop
+    //   dut.MatmulKernel_0_m_axi_gmem*_* - AXI data bus wires inside design_matmul
     //
-    // ap_CS_fsm is 19-bit one-hot.  Key FSM states (from csynth):
-    //   state1  - idle / wait for ap_start
-    //   state6  - latches a_buf-load pipeline ap_start_reg high
-    //   state7  - registered blk (waits, e.g. for multiplier or pipeline ready)
-    //   state14 - waits for b_tile-load (VITIS_LOOP_169) pipeline ap_done
-    //   state16, state19 - other registered-blk wait states
+    // The kernel-internals FSM probe below is DISABLED — see the note on the
+    // mm_fsm_probe block.  Only the AXI handshake probes, which reference
+    // stable design-level wire names, remain active.
     // =========================================================================
 
     // Shorthand for the kernel internals path.
@@ -834,31 +831,30 @@ module matmul_tb;
     endfunction
 
     // ---- Main FSM state-change logger -----------------------------------
+    //
+    // DISABLED: the loop below probes MatmulKernel's internal FSM and
+    // pipeline sub-instances by hierarchical name.  Since the kernel was
+    // re-architected as an HLS DATAFLOW design, those names no longer exist:
+    // there is no single one-hot `ap_CS_fsm` / `ap_ST_fsm_state*_blk`, and the
+    // `grp_*_Pipeline_VITIS_LOOP_<line>_fu_<N>` sub-blocks are renamed on every
+    // re-synthesis (source line numbers and the `fu_<N>` suffixes are not
+    // stable).  Referencing them aborts xelab elaboration.  Kept commented for
+    // waveform debugging — mirrors conv_tb.sv's ck_fsm_probe.
     initial begin : mm_fsm_probe
         int prev_s, cur_s;
         prev_s = 0;
         wait (`MM.ap_rst_n === 1'b1);
         @(posedge dut.zynq_ultra_ps_e_0_pl_clk0);
 
-        forever @(posedge dut.zynq_ultra_ps_e_0_pl_clk0) begin
-            #1; // sample a tick after the clock edge to avoid races
-            cur_s = fsm_decode(`MM.ap_CS_fsm);
-            if (cur_s !== prev_s) begin
-                $display("[%0t][MM_FSM] %0d->%0d idle=%b done=%b | blk_s1=%b blk_s7=%b blk_s14=%b blk_s16=%b blk_s19=%b | p128_start=%b p128_idle=%b p169_start=%b p169_idle=%b",
-                    $time, prev_s, cur_s,
-                    `MM.ap_idle, `MM.ap_done,
-                    `MM.ap_ST_fsm_state1_blk,
-                    `MM.ap_ST_fsm_state7_blk,
-                    `MM.ap_ST_fsm_state14_blk,
-                    `MM.ap_ST_fsm_state16_blk,
-                    `MM.ap_ST_fsm_state19_blk,
-                    `MM.grp_MatmulKernel_Pipeline_VITIS_LOOP_128_3_VITIS_LOOP_129_4_fu_538_ap_start,
-                    `MM.grp_MatmulKernel_Pipeline_VITIS_LOOP_128_3_VITIS_LOOP_129_4_fu_538_ap_idle,
-                    `MM.grp_MatmulKernel_Pipeline_VITIS_LOOP_169_9_VITIS_LOOP_170_10_fu_558_ap_start,
-                    `MM.grp_MatmulKernel_Pipeline_VITIS_LOOP_169_9_VITIS_LOOP_170_10_fu_558_ap_idle);
-                prev_s = cur_s;
-            end
-        end
+//        forever @(posedge dut.zynq_ultra_ps_e_0_pl_clk0) begin
+//            #1; // sample a tick after the clock edge to avoid races
+//            cur_s = fsm_decode(`MM.ap_CS_fsm);
+//            if (cur_s !== prev_s) begin
+//                $display("[%0t][MM_FSM] %0d->%0d idle=%b done=%b",
+//                    $time, prev_s, cur_s, `MM.ap_idle, `MM.ap_done);
+//                prev_s = cur_s;
+//            end
+//        end
     end
 
     // ---- gmem0 AR-channel (A matrix reads) ------------------------------
